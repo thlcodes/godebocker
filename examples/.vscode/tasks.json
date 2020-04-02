@@ -1,0 +1,67 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+
+    {
+      "label": "build debug binary",
+      "type": "shell",
+      "command": "mkdir -p \"${workspaceFolder}/build/debug\" && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -gcflags \"all=-N -l\" -o \"${workspaceFolder}/build/debug/bin\"",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true,
+        "group": "debug"
+      }
+    },
+    {
+      "label": "start godebocker",
+      "type": "shell",
+      "command": "docker run -it --rm -v \"${workspaceFolder}:/app\" -p 4040:4040 -p 8080 -p 5050 --network gopher --name ${workspaceFolderBasename}-debug -e ENV=local -e BINARY=./build/debug/bin -e GOPRIVATE=\"*.beta.audi\" godebugger",
+      "isBackground": true,
+      "dependsOn":[ "build debug binary"], // I prefer to build outside the container, simply because it's much faster. Remove this line and add `-e BUILD=true` to the command line if you want to build within the container.
+      "problemMatcher": {
+        "fileLocation": "relative",
+        "pattern": [ { "regexp": ".*", "file": 1, "location": 2, "message": 3 } ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": {
+            "regexp": "godebocker started.*" // must match $BEGIN_MSG so that VSCode known that the task actually started.
+          },
+          "endsPattern": {
+            "regexp": "API server listening.*" // when dis is printed, VSCode knows it can expect to debugger to connect successfully
+          }
+        }
+      },
+      "presentation": {
+        "group": "debug",
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "stop godebocker",
+      "type": "shell",
+      "command": "docker stop ${workspaceFolderBasename}-debug && rm -f __debug_bin || exit 0", // Stop the container, remove debug binary
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "never",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true,
+        "group": "debug"
+      }
+    }
+  ]
+}
