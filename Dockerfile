@@ -1,4 +1,4 @@
-FROM golang:1.13-alpine AS builder
+FROM golang:1.13-alpine
 
 RUN apk update && apk add --no-cache git openssh gcc
 
@@ -22,8 +22,6 @@ EXPOSE ${PORT} ${DLVPORT}
 
 WORKDIR /app
 
-COPY godebugger.sh /usr/local/bin/godebugger
+COPY godebocker.sh /usr/local/bin/godebocker
 
-RUN which godebugger
-
-CMD ["sh", "-c", "godebugger"]
+CMD ["sh", "-c", "godebocker"]
